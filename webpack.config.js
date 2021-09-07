@@ -28,6 +28,7 @@ module.exports = {
     },
     plugins: [
         new HtmlWebpackPlugin({
+            inject: false,
             hash: true,
             title: 'snake',
             template: 'src/assets/index.html',
