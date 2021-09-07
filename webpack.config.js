@@ -30,13 +30,14 @@ module.exports = {
         new HtmlWebpackPlugin({
             hash: true,
             title: 'snake',
-            template: 'src/assets/index.html'
+            template: 'src/assets/index.html',
+            path: path.resolve(__dirname, './dist')
         })
     ],
     devServer: {
         port: 8888,
         hot: true,
-        watchFiles: ['src/**/*.ts'],
+        watchFiles: ['src/**/*.ts', 'src/**/*.html'],
         static: {
             directory: path.join(__dirname, 'dist'),
         }
