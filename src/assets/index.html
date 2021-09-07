@@ -5,6 +5,11 @@
     <title><%= htmlWebpackPlugin.options.title %></title>
   </head>
   <body>
+      <div class="main-area">
+          <%= require('html-loader!./canvas.html').default %>
+      </div>
+      <% htmlWebpackPlugin.files.js.forEach(function (file) { %>
+          <script defer src="<%= htmlWebpackPlugin.files.js %>"></script>
+      <% }) %>
   </body>
-  <script defer src="build/bundle.js"></script>
 </html>
