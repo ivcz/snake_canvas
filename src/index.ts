@@ -4,23 +4,23 @@ import { Main } from '@/Game/Main'
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    const game = new Main('main-canvas', 10);
+    const game = new Main('main-canvas', 640);
     game.start();
 
-    document.addEventListener('keyup', (ev: KeyboardEvent) => {
-        if (ev.key === 'й') {
+    document.addEventListener('keypress', (ev: KeyboardEvent) => {
+        if (ev.key === 'q' || ev.key === 'й') {
             game.togglePause();
         }
-        if (ev.key === 'р') {
+        if (ev.key === 'h' || ev.key === 'р') {
             game.dirLeft();
         }
-        if (ev.key === 'о') {
+        if (ev.key === 'j' || ev.key === 'о') {
             game.dirDown();
         }
-        if (ev.key === 'л') {
+        if (ev.key === 'k' || ev.key === 'л') {
             game.dirUp();
         }
-        if (ev.key === 'д') {
+        if (ev.key === 'l' || ev.key === 'д') {
             game.dirRight();
         }
     });

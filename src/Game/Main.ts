@@ -57,12 +57,40 @@ export class Coord {
         this._y = y;
     }
     
-    public get x() : number{
+    public get x(): number{
         return this._x;
     }
 
-    public get y() : number{
+    public get y(): number{
         return this._y;
+    }
+
+}
+
+export class Apple {
+    
+    private coord1: Coord;
+    private coord2: Coord;
+
+    constructor(coord1: Coord, coord2: Coord) {
+        this.coord1 = coord1;
+        this.coord2 = coord2;
+    }
+
+    public get x1(): number {
+        return this.coord1.x;
+    }
+
+    public get x2(): number {
+        return this.coord2.x;
+    }
+
+    public get y1(): number {
+        return this.coord1.y;
+    }
+
+    public get y2(): number {
+        return this.coord2.y;
     }
 
 }
@@ -81,6 +109,7 @@ export class Main {
     protected snakeLength: number = 8;
     protected snakeDirection: Direction;
     protected snake: Coord[] = [];
+    protected apple: Apple = new Apple(new Coord(0,0), new Coord(1,1)); // placeholder
 
     protected isPaused = false;
 
@@ -89,21 +118,25 @@ export class Main {
         this.gridCount = gridCount;
         this.canvas = document.getElementById(this.canvasId) as HTMLCanvasElement;
         this.canvasContext = this.canvas.getContext('2d') as CanvasRenderingContext2D;
+        this.cellWidth = Math.floor(this.canvas.width / this.gridCount);
+        this.cellHeight = Math.floor(this.canvas.height / this.gridCount);
         this.snakeDirection = new Direction;
         this.snakeDirection.setUp();
     }
 
     public start(): void {
         this.makeSnake();
+        // this.createField();
+        this.createApple();
         setInterval(() => {
             if (!this.isPaused) {
                 this.canvasContext.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                this.createField();
                 this.moveSnake();
+                this.renderApple();
                 this.renderSnake();
                 this.canvasContext.stroke();
             }
-        }, 1000 / 5);
+        }, 1000 / 640);
     }
 
     private restart(): void {
@@ -115,9 +148,24 @@ export class Main {
         this.makeSnake();
     }
 
+    private createApple(): void {
+        const appleScale = 20;
+        const appleX1 = Math.floor(Math.random() * (this.gridCount - appleScale));
+        const appleY1 = Math.floor(Math.random() * (this.gridCount - appleScale));
+        this.apple = new Apple(new Coord(appleX1, appleY1), new Coord(appleX1 + appleScale, appleY1 + appleScale));
+    }
+
+    private renderApple(): void {
+        this.canvasContext.fillStyle = 'red';
+        this.canvasContext.fillRect(
+            this.apple.x1,
+            this.apple.y1,
+            this.apple.x2 - this.apple.x1,
+            this.apple.y2 - this.apple.y1
+        );
+    }
+
     private createField(): void {
-        this.cellWidth = Math.floor(this.canvas.width / this.gridCount);
-        this.cellHeight = Math.floor(this.canvas.height / this.gridCount);
         this.canvasContext.beginPath();
         this.canvasContext.lineWidth = 1;
         this.canvasContext.strokeStyle = 'grey';
@@ -146,6 +194,19 @@ export class Main {
             if (newX === this.snake[i].x && newY === this.snake[i].y) {
                 this.restart();
                 alert('collision');
+            } else if (
+                newX >= this.apple.x1
+                && newX <= this.apple.x2
+                && newY >= this.apple.y1
+                && newY <= this.apple.y2
+            ) {
+                this.snakeLength += 20;
+                for (let i = 0; i < 20; i++) {
+                    const x = this.snakeX + i * this.snakeDirection.x * -1;
+                    const y = this.snakeY + i * this.snakeDirection.y * -1;
+                    this.snake.push(new Coord(x, y));
+                }
+                this.createApple();
             }
         }
     }
