@@ -28,13 +28,16 @@ export class Main {
                 this.snake.draw(this.field);
                 this.apple.draw(this.field);
                 this.field.render();
-                const moveResponse = this.snake.move(this.field, this.apple, this.appleScale);
-                if (moveResponse === 'collision') {
-                    alert('collision');
-                    this.isPaused = true;
-                    this.restart();
-                } else if (moveResponse === 'apple') {
-                    this.createApple();
+                switch (this.snake.move(this.field, this.apple, this.appleScale)) {
+                    case 'collision':
+                        alert('collision');
+                        this.isPaused = true;
+                        this.restart();
+                        break;
+
+                    case 'apple':
+                        this.createApple();
+                        break;
                 }
             }
         }, this.turnRate);
@@ -42,7 +45,7 @@ export class Main {
 
     private restart(): void {
         this.snake = new Snake();
-        this.apple = new Apple(new Coord(0, 0), new Coord(1, 1));
+        this.createApple();
     }
 
     private createApple(): void {

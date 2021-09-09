@@ -22,9 +22,12 @@ export default class Snake {
 
     private makeBody(): void {
         for (let i = this._length - 1; i >= 0; i--) {
-            const x = this._headX + i * this._direction.x;
-            const y = this._headY + i * this._direction.y;
-            this._body.push(new Coord(x, y));
+            this._body.push(
+                new Coord(
+                    this._headX + i * this._direction.x,
+                    this._headY + i * this._direction.y
+                )
+            );
         }
     }
 
@@ -66,9 +69,12 @@ export default class Snake {
             const tailYVector = tail.y - this._body[this._length - 2].y;
             this._length += incrementOnApple;
             for (let i = 0; i < incrementOnApple; i++) {
-                const x = tail.x + i * tailXVector;
-                const y = tail.y + i * tailYVector;
-                this._body.push(new Coord(x, y));
+                this._body.push(
+                    new Coord(
+                        tail.x + i * tailXVector,
+                        tail.y + i * tailYVector
+                    )
+                );
             }
             return 'apple';
         }
