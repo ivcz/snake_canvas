@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.addEventListener('keypress', (ev: KeyboardEvent) => {
         if (ev.key === 'q' || ev.key === 'й') {
+            console.log('pause toggle');
             game.togglePause();
         }
         if (ev.key === 'h' || ev.key === 'р') {
