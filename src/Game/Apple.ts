@@ -15,10 +15,10 @@ export default class Apple {
     public draw(field: Field): void {
         field.context.fillStyle = 'red';
         field.context.fillRect(
-            this.coord1.x,
-            this.coord1.y,
-            this.coord2.x - this.coord1.x,
-            this.coord2.y - this.coord1.y
+            this.coord1.x * field.cellWidth,
+            this.coord1.y * field.cellHeight,
+            (this.coord2.x - this.coord1.x) * field.cellWidth,
+            (this.coord2.y - this.coord1.y) * field.cellHeight
         );
     }
 
