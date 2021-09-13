@@ -1,11 +1,18 @@
 import '@/assets/style/main.scss';
 
 import { Main } from '@/Game/Main'
+import AI from './Game/AI';
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    const game = new Main('main-canvas', 640);
-    game.start();
+    const game = new Main('main-canvas', 320);
+    const ai = new AI(game);
+    setInterval(() => {
+        if (!game.pause) {
+            ai.start();
+            game.start();
+        }
+    }, 1000 / 800);
 
     document.addEventListener('keypress', (ev: KeyboardEvent) => {
         if (ev.key === 'q' || ev.key === 'й') {
