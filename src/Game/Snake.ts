@@ -109,6 +109,10 @@ export default class Snake {
         return this._length;
     }
 
+    public get body(): Coord[] {
+        return this._body;
+    }
+
     public get direction(): Direction {
         return this._direction;
     }

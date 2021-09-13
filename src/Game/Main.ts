@@ -6,52 +6,53 @@ import Snake from './Snake';
 
 export class Main {
     
-    protected field: Field;
-    protected snake: Snake;
-    protected apple: Apple;
+    protected _field: Field;
+    protected _snake: Snake;
+    protected _apple: Apple;
 
     protected isPaused = false;
     protected appleScale: number = 20;
     protected turnRate: number = 1000 / 640;
 
     constructor(canvasId: string, gridCount: number = 10) {
-        this.field = new Field(canvasId, gridCount);
-        this.snake = new Snake();
-        this.apple = new Apple(new Coord(0, 0), new Coord(1, 1));
+        this._field = new Field(canvasId, gridCount);
+        this._snake = new Snake();
+        this._apple = new Apple(new Coord(0, 0), new Coord(1, 1));
+        this.createApple();
     }
 
     public start(): void {
-        this.createApple();
-        setInterval(() => {
+        // setInterval(() => {
             if (!this.isPaused) {
-                this.field.clear();
-                this.snake.draw(this.field);
-                this.apple.draw(this.field);
-                this.field.render();
-                switch (this.snake.move(this.field, this.apple, this.appleScale)) {
+                this._field.clear();
+                this._snake.draw(this._field);
+                this._apple.draw(this._field);
+                this._field.render();
+                switch (this._snake.move(this._field, this._apple, this.appleScale)) {
                     case 'collision':
                         alert('collision');
                         this.isPaused = true;
+                        console.log('score: ', this._snake.length);
                         this.restart();
-                        break;
+                    break;
 
                     case 'apple':
                         this.createApple();
-                        break;
+                    break;
                 }
             }
-        }, this.turnRate);
+        // }, this.turnRate);
     }
 
     private restart(): void {
-        this.snake = new Snake();
+        this._snake = new Snake();
         this.createApple();
     }
 
     private createApple(): void {
-        const appleX1 = Math.floor(Math.random() * (this.field.gridCount - this.appleScale));
-        const appleY1 = Math.floor(Math.random() * (this.field.gridCount - this.appleScale));
-        this.apple = new Apple(
+        const appleX1 = Math.ceil(Math.random() * (this._field.gridCount - this.appleScale));
+        const appleY1 = Math.ceil(Math.random() * (this._field.gridCount - this.appleScale));
+        this._apple = new Apple(
             new Coord(appleX1, appleY1),
             new Coord(appleX1 + this.appleScale, appleY1 + this.appleScale)
         );
@@ -61,24 +62,43 @@ export class Main {
     }
 
     public dirLeft(): void {
-        if (!this.snake.direction.isRight()) this.snake.direction.setLeft();
+        if (!this._snake.direction.isRight()) this._snake.direction.setLeft();
     }
 
     public dirRight(): void {
-        if (!this.snake.direction.isLeft()) this.snake.direction.setRight();
+        if (!this._snake.direction.isLeft()) this._snake.direction.setRight();
     }
 
     public dirUp(): void {
-        if (!this.snake.direction.isDown()) this.snake.direction.setUp();
+        if (!this._snake.direction.isDown()) this._snake.direction.setUp();
     }
 
     public dirDown(): void {
-        if (!this.snake.direction.isUp()) this.snake.direction.setDown();
+        if (!this._snake.direction.isUp()) this._snake.direction.setDown();
     }
 
     public togglePause(): void {
         this.isPaused = !this.isPaused;
     }
 
+    public get apple(): Apple {
+        return this._apple;
+    }
+
+    public get field(): Field {
+        return this._field;
+    }
+
+    public get snake(): Snake {
+        return this._snake;
+    }
+
+    public get pause(): boolean {
+        return this.isPaused;
+    }
+
+    public get tr(): number {
+        return this.turnRate;
+    }
 
 }
