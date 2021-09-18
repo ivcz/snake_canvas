@@ -27,6 +27,8 @@ export default class AStar {
     private apple: Apple;
     private goal: Coord;
     private game: Game;
+
+    private vectors = [[0, 1], [1, 0], [-1, 0], [0, -1]];
     
     constructor(game: Game) {
         this.game = game;
@@ -134,16 +136,12 @@ export default class AStar {
 
     private getNeighbors(coord: PathNode): PathNode[] {
         let res: PathNode[] = [];
-        for (let x = -1; x <= 1; ++x) {
-            for (let y = -1; y <= 1; ++y) {
-                const newCoord = new PathNode(
-                    coord.x + x,
-                    coord.y + y
-                );
-                if (x !== y && x !== y * -1) {
-                    if (!this.checkCollision(newCoord)) res.push(newCoord);
-                }
-            }
+        for (let i = 0; i < this.vectors.length; ++i) {
+            const newCoord = new PathNode(
+                coord.x + this.vectors[i][0],
+                coord.y + this.vectors[i][1]
+            );
+            if (!this.checkCollision(newCoord)) res.push(newCoord);
         }
         return res;
     }
