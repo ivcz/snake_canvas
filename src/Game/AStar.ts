@@ -32,9 +32,9 @@ export default class AStar {
     
     constructor(game: Game) {
         this.game = game;
-        this.snake = game.snake;
-        this.field = game.field;
-        this.apple = game.apple;
+        this.snake = this.game.snake;
+        this.field = this.game.field;
+        this.apple = this.game.apple;
         this.goal = this.getGoalCoord();
     }
 
@@ -66,19 +66,19 @@ export default class AStar {
                 this.getGoalCoord()
             )
         );
-        let open: PathNode[] = [start];
-        let closed: PathNode[] = [];
-        let current = open[0];
-        while (open.length > 0 && current) {
-            open.sort((el1, el2) => {
+        let openMap: Map<string, PathNode> = new Map();
+        openMap.set(`${start.x}.${start.y}`, start);
+        let closedKeys: Set<string> = new Set();
+        let current = start;
+        while (openMap.size > 0 && current) {
+             current = Array.from(openMap.values()).sort((el1, el2) => {
                 if (el1.fScore < el2.fScore) return -1;
                 if (el1.fScore > el2.fScore) return 1;
                 if (el1.gScore < el2.gScore) return -1;
                 if (el1.gScore > el2.gScore) return 1;
                 return 0;
-            });
-            current = open[0];
-            closed.push(current);
+            })[0];
+            closedKeys.add(`${current.x}.${current.y}`);
             if (current.x >= this.apple.x1 
                 && current.x <= this.apple.x2
                 && current.y >= this.apple.y1
@@ -86,29 +86,20 @@ export default class AStar {
             ) {
                 return current;
             }
-            open.splice(open.findIndex(el => el.x === current.x && el.y === current.y), 1);
-            const neighbors = this.getNeighbors(current);
-            neighbors.forEach(neighbor => {
+            openMap.delete(`${current.x}.${current.y}`);
+            this.getNeighbors(current).forEach(neighbor => {
                 const gCost = this.countDistance(start, neighbor);
-                const hCost = this.countDistance(neighbor, this.goal);
-                const fCost = hCost + gCost;
+                const fCost = this.countDistance(neighbor, this.goal) + gCost;
                 neighbor.prev = current;
                 neighbor.gScore = gCost;
                 neighbor.fScore = fCost;
-                if (!this.hasNode(open, neighbor) && !this.hasNode(closed, neighbor)) open.push(neighbor);
+                // if (gCost <= current.fScore) {
+                    if (!openMap.has(`${neighbor.x}.${neighbor.y}`) && !closedKeys.has(`${neighbor.x}.${neighbor.y}`))
+                        openMap.set(`${neighbor.x}.${neighbor.y}`, neighbor);
+                // }
             });
         }
         throw 'failure';
-    }
-
-    private hasNode(list: PathNode[], node: PathNode): boolean {
-        for (let i = 0; i < list.length; ++i) {
-            if (
-                list[i].x === node.x
-                && list[i].y === node.y
-            ) return true;
-        }
-        return false;
     }
 
     private checkCollision(coord: Coord): boolean {
@@ -116,13 +107,7 @@ export default class AStar {
         if (coord.x < 0) return true;
         if (coord.y >= this.field.gridCount) return true;
         if (coord.y < 0) return true;
-        for (let i = 0; i < this.snake.length; ++i) {
-            if (
-                this.snake.body[i].x === coord.x
-                && this.snake.body[i].y === coord.y
-            ) return true;
-        }
-        return false;
+        return this.snake.has(`${coord.x}.${coord.y}`);
     }
 
     private countDistance(c1: Coord, c2: Coord): number {
@@ -152,5 +137,5 @@ export default class AStar {
         this.goal = new Coord(appleXCenter, appleYCenter);
         return this.goal;
     }
- 
+
 }

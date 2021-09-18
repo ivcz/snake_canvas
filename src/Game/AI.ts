@@ -38,10 +38,7 @@ export default class AI {
         if (newY < 0) return true;
         if (newX >= this.game.field.gridCount) return true;
         if (newY >= this.game.field.gridCount) return true;
-        for (let i = 0; i < this.game.snake.length; ++i) {
-            if (this.game.snake.body[i].x === newX && this.game.snake.body[i].y === newY) return true;
-        }
-        return false;
+        return this.game.snake.has(`${newX}.${newY}`);
     }
 
     private act(): void {
