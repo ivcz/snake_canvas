@@ -4,7 +4,7 @@ import Field from './Field';
 import Snake from './Snake';
 
 import Coord from '@/Utils/Coord';
-// import Direction from '@/Utils/Direction';
+import Heap from '@/Utils/Heap';
 
 class PathNode extends Coord {
     public gScore: number;
@@ -17,6 +17,35 @@ class PathNode extends Coord {
         this.gScore = gScore;
         this.prev = prev;
     }
+}
+
+class NodeHeap extends Heap<PathNode> {
+
+    protected keys: Set<string> = new Set();
+
+    constructor(items: Array<PathNode>, compare: (i1: PathNode, i2: PathNode) => number) {
+        super(items, compare);
+    }
+
+    public add(item: PathNode): void {
+        this.items.push(item);
+        this.keys.add(`${item.x}.${item.y}`);
+        this.sortUp(this.size - 1);
+    }
+
+    public has(index: string): boolean {
+        return this.keys.has(index);
+    }
+
+    public pop(): PathNode {
+        const res = this.items[0];
+        this.swap(0, this.size - 1);
+        this.items.pop();
+        this.keys.delete(`${res.x}.${res.y}`);
+        if (this.size > 0) this.sortDown(0);
+        return res;
+    }
+
 }
 
 export default class AStar {
@@ -43,6 +72,8 @@ export default class AStar {
             const path = this.reconstructPath(this.findPath());
             return new Coord(path[0].x, path[0].y);
         } catch (e) {
+            console.log('err', e);
+            // alert(e);
             throw e;
         }
     }
@@ -66,33 +97,31 @@ export default class AStar {
                 this.getGoalCoord()
             )
         );
-        let openMap: Map<string, PathNode> = new Map();
-        openMap.set(`${start.x}.${start.y}`, start);
+        let open: NodeHeap = new NodeHeap([start], (el1: PathNode, el2: PathNode) => {
+            if (el1.fScore < el2.fScore) return -1;
+            if (el1.fScore > el2.fScore) return 1;
+            if (el1.gScore < el2.gScore) return -1;
+            if (el1.gScore > el2.gScore) return 1;
+            return 0;
+        });
         let closedKeys: Set<string> = new Set();
-        let current = start;
-        while (openMap.size > 0 && current) {
-             current = Array.from(openMap.values()).sort((el1, el2) => {
-                if (el1.fScore < el2.fScore) return -1;
-                if (el1.fScore > el2.fScore) return 1;
-                if (el1.gScore < el2.gScore) return -1;
-                if (el1.gScore > el2.gScore) return 1;
-                return 0;
-            })[0];
-            closedKeys.add(`${current.x}.${current.y}`);
+        let current = open.first;
+        while (open.size > 0 && current) {
+            current = open.pop();
             if (current.x >= this.apple.x1 
                 && current.x <= this.apple.x2
                 && current.y >= this.apple.y1
                 && current.y <= this.apple.y2
             ) return current;
-            openMap.delete(`${current.x}.${current.y}`);
+            closedKeys.add(`${current.x}.${current.y}`);
             for (let neighbor of this.getNeighbors(current)) {
-                if (!openMap.has(`${neighbor.x}.${neighbor.y}`) && !closedKeys.has(`${neighbor.x}.${neighbor.y}`)) {
+                if (!open.has(`${neighbor.x}.${neighbor.y}`) && !closedKeys.has(`${neighbor.x}.${neighbor.y}`)) {
                     const gCost = this.countDistance(start, neighbor);
                     const fCost = this.countDistance(neighbor, this.goal) + gCost;
                     neighbor.prev = current;
                     neighbor.gScore = gCost;
                     neighbor.fScore = fCost;
-                    openMap.set(`${neighbor.x}.${neighbor.y}`, neighbor);
+                    open.add(neighbor);
                 }
             }
         }
@@ -118,10 +147,10 @@ export default class AStar {
 
     private getNeighbors(coord: PathNode): PathNode[] {
         let res: PathNode[] = [];
-        for (let i = 0; i < this.vectors.length; ++i) {
+        for (const vector of this.vectors) {
             const newCoord = new PathNode(
-                coord.x + this.vectors[i][0],
-                coord.y + this.vectors[i][1]
+                coord.x + vector[0],
+                coord.y + vector[1]
             );
             if (!this.checkCollision(newCoord)) res.push(newCoord);
         }
