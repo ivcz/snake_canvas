@@ -5,6 +5,7 @@ import Snake from './Snake';
 
 import Coord from '@/Utils/Coord';
 import Heap from '@/Utils/Heap';
+import Direction from '@/Utils/Direction';
 
 class PathNode extends Coord {
     public gScore: number;
@@ -67,10 +68,37 @@ export default class AStar {
         this.goal = this.getGoalCoord();
     }
 
+    public update(game: Game) {
+        this.game = game;
+        this.snake = this.game.snake;
+        this.field = this.game.field;
+        this.apple = this.game.apple;
+        this.goal = this.getGoalCoord();
+    }
+
+    private prevPath(): boolean {
+        const pathLength = this.path.length - 1;
+        if (this.goal.x === this.path[pathLength].x && this.goal.y === this.path[pathLength].y) {
+            for (let i = 0; i <= pathLength; ++i) {
+                if (this.checkCollision(new Coord(this.path[i].x, this.path[i].y))) return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
     public nextCoord(): Coord {
+        if (this.path.length > 0 && this.prevPath()) {
+            const newCoord = new Coord(this.path[0].x, this.path[0].y);
+            this.path.shift();
+            return newCoord;
+        }
         try {
             const path = this.reconstructPath(this.findPath());
-            return new Coord(path[0].x, path[0].y);
+            this.path = path;
+            const newCoord = new Coord(path[0].x, path[0].y);
+            this.path.shift();
+            return newCoord;
         } catch (e) {
             console.log('err', e);
             // alert(e);
