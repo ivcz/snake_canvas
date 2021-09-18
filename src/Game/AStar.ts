@@ -83,21 +83,18 @@ export default class AStar {
                 && current.x <= this.apple.x2
                 && current.y >= this.apple.y1
                 && current.y <= this.apple.y2
-            ) {
-                return current;
-            }
+            ) return current;
             openMap.delete(`${current.x}.${current.y}`);
-            this.getNeighbors(current).forEach(neighbor => {
-                const gCost = this.countDistance(start, neighbor);
-                const fCost = this.countDistance(neighbor, this.goal) + gCost;
-                neighbor.prev = current;
-                neighbor.gScore = gCost;
-                neighbor.fScore = fCost;
-                // if (gCost <= current.fScore) {
-                    if (!openMap.has(`${neighbor.x}.${neighbor.y}`) && !closedKeys.has(`${neighbor.x}.${neighbor.y}`))
-                        openMap.set(`${neighbor.x}.${neighbor.y}`, neighbor);
-                // }
-            });
+            for (let neighbor of this.getNeighbors(current)) {
+                if (!openMap.has(`${neighbor.x}.${neighbor.y}`) && !closedKeys.has(`${neighbor.x}.${neighbor.y}`)) {
+                    const gCost = this.countDistance(start, neighbor);
+                    const fCost = this.countDistance(neighbor, this.goal) + gCost;
+                    neighbor.prev = current;
+                    neighbor.gScore = gCost;
+                    neighbor.fScore = fCost;
+                    openMap.set(`${neighbor.x}.${neighbor.y}`, neighbor);
+                }
+            }
         }
         throw 'failure';
     }
