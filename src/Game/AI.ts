@@ -54,7 +54,7 @@ export default class AI {
     }
 
     public start(): void {
-        this.astar = new AStar(this.game);
+        this.astar.update(this.game);
         this.act();
     }
 

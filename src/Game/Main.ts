@@ -52,18 +52,24 @@ export class Main {
     private createApple(): void {
         const appleX1 = Math.ceil(Math.random() * (this._field.gridCount - this.appleScale));
         const appleY1 = Math.ceil(Math.random() * (this._field.gridCount - this.appleScale));
-        if (this.snake.has(`${appleX1}.${appleY1}`)) {
-            this.createApple();
-            return;
+        const appleX2 = this.appleScale === 1 ? appleX1 : this.appleScale + appleX1;
+        const appleY2 = this.appleScale === 1 ? appleY1 : this.appleScale + appleY1;
+        for (let i = appleX1; i <= appleX2; ++i) {
+            for (let j = appleY1; j <= appleY2; ++j) {
+                if (this.snake.has(`${i}.${j}`)) {
+                    this.createApple();
+                    return;
+                }
+            }
         }
-        this._apple = new Apple(
-            new Coord(appleX1, appleY1),
-            new Coord(appleX1, appleY1)
-        );
         // this._apple = new Apple(
         //     new Coord(appleX1, appleY1),
-        //     new Coord(appleX1 + (this.appleScale === 1 ? 0 : this.appleScale), appleY1 + (this.appleScale === 1 ? 0: this.appleScale))
+        //     new Coord(appleX1, appleY1)
         // );
+        this._apple = new Apple(
+            new Coord(appleX1, appleY1),
+            new Coord(appleX2, appleY2)
+        );
     }
 
     private render(): void {
