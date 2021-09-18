@@ -18,20 +18,24 @@ export default class Direction {
         return this.x === 0 && this.y === 1;
     }
 
-    public setLeft(): void {
+    public setLeft(): this {
         [...this.directionVector] = [-1, 0];
+        return this;
     }
 
-    public setRight(): void {
+    public setRight(): this {
         [...this.directionVector] = [1, 0];
+        return this;
     }
 
-    public setUp(): void {
+    public setUp(): this {
         [...this.directionVector] = [0, -1];
+        return this;
     }
 
-    public setDown(): void {
+    public setDown(): this {
         [...this.directionVector] = [0, 1];
+        return this;
     }
 
     public getDirection(): Array<number> {
