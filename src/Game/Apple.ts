@@ -17,8 +17,8 @@ export default class Apple {
         field.context.fillRect(
             this.coord1.x * field.cellWidth,
             this.coord1.y * field.cellHeight,
-            (this.coord2.x - this.coord1.x) * field.cellWidth,
-            (this.coord2.y - this.coord1.y) * field.cellHeight
+            (this.coord2.x - this.coord1.x > 0 ? this.coord2.x - this.coord1.x : 1) * field.cellWidth,
+            (this.coord2.y - this.coord1.y > 0 ? this.coord2.y - this.coord1.y : 1) * field.cellHeight
         );
     }
 

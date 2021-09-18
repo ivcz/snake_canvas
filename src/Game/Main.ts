@@ -11,7 +11,7 @@ export class Main {
     protected _apple: Apple;
 
     protected isPaused = false;
-    protected appleScale: number = 20;
+    protected appleScale: number = 1;
     protected turnRate: number = 1000 / 640;
 
     constructor(canvasId: string, gridCount: number = 10) {
@@ -24,15 +24,11 @@ export class Main {
     public start(): void {
         // setInterval(() => {
             if (!this.isPaused) {
-                this._field.clear();
-                this._snake.draw(this._field);
-                this._apple.draw(this._field);
-                this._field.render();
                 switch (this._snake.move(this._field, this._apple, this.appleScale)) {
                     case 'collision':
+                        console.log('score: ', this._snake.length);
                         alert('collision');
                         this.isPaused = true;
-                        console.log('score: ', this._snake.length);
                         this.restart();
                     break;
 
@@ -40,6 +36,10 @@ export class Main {
                         this.createApple();
                     break;
                 }
+                this._field.clear();
+                this._snake.draw(this._field);
+                this._apple.draw(this._field);
+                this._field.render();
             }
         // }, this.turnRate);
     }
@@ -52,10 +52,20 @@ export class Main {
     private createApple(): void {
         const appleX1 = Math.ceil(Math.random() * (this._field.gridCount - this.appleScale));
         const appleY1 = Math.ceil(Math.random() * (this._field.gridCount - this.appleScale));
+        for (let i = 0; i < this.snake.length; ++i) {
+            if (this.snake.body[i].x === appleX1 && this.snake.body[i].y === appleY1) {
+                this.createApple();
+                return;
+            }
+        }
         this._apple = new Apple(
             new Coord(appleX1, appleY1),
-            new Coord(appleX1 + this.appleScale, appleY1 + this.appleScale)
+            new Coord(appleX1, appleY1)
         );
+        // this._apple = new Apple(
+        //     new Coord(appleX1, appleY1),
+        //     new Coord(appleX1 + (this.appleScale === 1 ? 0 : this.appleScale), appleY1 + (this.appleScale === 1 ? 0: this.appleScale))
+        // );
     }
 
     private render(): void {
