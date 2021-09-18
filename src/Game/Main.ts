@@ -52,11 +52,9 @@ export class Main {
     private createApple(): void {
         const appleX1 = Math.ceil(Math.random() * (this._field.gridCount - this.appleScale));
         const appleY1 = Math.ceil(Math.random() * (this._field.gridCount - this.appleScale));
-        for (let i = 0; i < this.snake.length; ++i) {
-            if (this.snake.body[i].x === appleX1 && this.snake.body[i].y === appleY1) {
-                this.createApple();
-                return;
-            }
+        if (this.snake.has(`${appleX1}.${appleY1}`)) {
+            this.createApple();
+            return;
         }
         this._apple = new Apple(
             new Coord(appleX1, appleY1),

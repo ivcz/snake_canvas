@@ -4,7 +4,7 @@ import Field from './Field';
 import Snake from './Snake';
 
 import Coord from '@/Utils/Coord';
-// import Direction from '@/Utils/Direction';
+import Heap from '@/Utils/Heap';
 
 class PathNode extends Coord {
     public gScore: number;
@@ -19,6 +19,35 @@ class PathNode extends Coord {
     }
 }
 
+class NodeHeap extends Heap<PathNode> {
+
+    protected keys: Set<string> = new Set();
+
+    constructor(items: Array<PathNode>, compare: (i1: PathNode, i2: PathNode) => number) {
+        super(items, compare);
+    }
+
+    public add(item: PathNode): void {
+        this.items.push(item);
+        this.keys.add(`${item.x}.${item.y}`);
+        this.sortUp(this.size - 1);
+    }
+
+    public has(index: string): boolean {
+        return this.keys.has(index);
+    }
+
+    public pop(): PathNode {
+        const res = this.items[0];
+        this.swap(0, this.size - 1);
+        this.items.pop();
+        this.keys.delete(`${res.x}.${res.y}`);
+        if (this.size > 0) this.sortDown(0);
+        return res;
+    }
+
+}
+
 export default class AStar {
 
     protected path: PathNode[] = [];
@@ -27,12 +56,14 @@ export default class AStar {
     private apple: Apple;
     private goal: Coord;
     private game: Game;
+
+    private vectors = [[0, 1], [1, 0], [-1, 0], [0, -1]];
     
     constructor(game: Game) {
         this.game = game;
-        this.snake = game.snake;
-        this.field = game.field;
-        this.apple = game.apple;
+        this.snake = this.game.snake;
+        this.field = this.game.field;
+        this.apple = this.game.apple;
         this.goal = this.getGoalCoord();
     }
 
@@ -41,6 +72,8 @@ export default class AStar {
             const path = this.reconstructPath(this.findPath());
             return new Coord(path[0].x, path[0].y);
         } catch (e) {
+            console.log('err', e);
+            // alert(e);
             throw e;
         }
     }
@@ -64,49 +97,35 @@ export default class AStar {
                 this.getGoalCoord()
             )
         );
-        let open: PathNode[] = [start];
-        let closed: PathNode[] = [];
-        let current = open[0];
-        while (open.length > 0 && current) {
-            open.sort((el1, el2) => {
-                if (el1.fScore < el2.fScore) return -1;
-                if (el1.fScore > el2.fScore) return 1;
-                if (el1.gScore < el2.gScore) return -1;
-                if (el1.gScore > el2.gScore) return 1;
-                return 0;
-            });
-            current = open[0];
-            closed.push(current);
+        let open: NodeHeap = new NodeHeap([start], (el1: PathNode, el2: PathNode) => {
+            if (el1.fScore < el2.fScore) return -1;
+            if (el1.fScore > el2.fScore) return 1;
+            if (el1.gScore < el2.gScore) return -1;
+            if (el1.gScore > el2.gScore) return 1;
+            return 0;
+        });
+        let closedKeys: Set<string> = new Set();
+        let current = open.first;
+        while (open.size > 0 && current) {
+            current = open.pop();
             if (current.x >= this.apple.x1 
                 && current.x <= this.apple.x2
                 && current.y >= this.apple.y1
                 && current.y <= this.apple.y2
-            ) {
-                return current;
+            ) return current;
+            closedKeys.add(`${current.x}.${current.y}`);
+            for (let neighbor of this.getNeighbors(current)) {
+                if (!open.has(`${neighbor.x}.${neighbor.y}`) && !closedKeys.has(`${neighbor.x}.${neighbor.y}`)) {
+                    const gCost = this.countDistance(start, neighbor);
+                    const fCost = this.countDistance(neighbor, this.goal) + gCost;
+                    neighbor.prev = current;
+                    neighbor.gScore = gCost;
+                    neighbor.fScore = fCost;
+                    open.add(neighbor);
+                }
             }
-            open.splice(open.findIndex(el => el.x === current.x && el.y === current.y), 1);
-            const neighbors = this.getNeighbors(current);
-            neighbors.forEach(neighbor => {
-                const gCost = this.countDistance(start, neighbor);
-                const hCost = this.countDistance(neighbor, this.goal);
-                const fCost = hCost + gCost;
-                neighbor.prev = current;
-                neighbor.gScore = gCost;
-                neighbor.fScore = fCost;
-                if (!this.hasNode(open, neighbor) && !this.hasNode(closed, neighbor)) open.push(neighbor);
-            });
         }
         throw 'failure';
-    }
-
-    private hasNode(list: PathNode[], node: PathNode): boolean {
-        for (let i = 0; i < list.length; ++i) {
-            if (
-                list[i].x === node.x
-                && list[i].y === node.y
-            ) return true;
-        }
-        return false;
     }
 
     private checkCollision(coord: Coord): boolean {
@@ -114,13 +133,7 @@ export default class AStar {
         if (coord.x < 0) return true;
         if (coord.y >= this.field.gridCount) return true;
         if (coord.y < 0) return true;
-        for (let i = 0; i < this.snake.length; ++i) {
-            if (
-                this.snake.body[i].x === coord.x
-                && this.snake.body[i].y === coord.y
-            ) return true;
-        }
-        return false;
+        return this.snake.has(`${coord.x}.${coord.y}`);
     }
 
     private countDistance(c1: Coord, c2: Coord): number {
@@ -134,16 +147,12 @@ export default class AStar {
 
     private getNeighbors(coord: PathNode): PathNode[] {
         let res: PathNode[] = [];
-        for (let x = -1; x <= 1; ++x) {
-            for (let y = -1; y <= 1; ++y) {
-                const newCoord = new PathNode(
-                    coord.x + x,
-                    coord.y + y
-                );
-                if (x !== y && x !== y * -1) {
-                    if (!this.checkCollision(newCoord)) res.push(newCoord);
-                }
-            }
+        for (const vector of this.vectors) {
+            const newCoord = new PathNode(
+                coord.x + vector[0],
+                coord.y + vector[1]
+            );
+            if (!this.checkCollision(newCoord)) res.push(newCoord);
         }
         return res;
     }
@@ -154,5 +163,5 @@ export default class AStar {
         this.goal = new Coord(appleXCenter, appleYCenter);
         return this.goal;
     }
- 
+
 }
