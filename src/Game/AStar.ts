@@ -3,7 +3,7 @@ import { Main as Game } from './Main';
 import Coord from '@/Utils/Coord';
 import PathNode from '@/Utils/PathNode';
 import PathNodeHeap from '@/Utils/PathNodeHeap';
-import { CoordStorage, NodeStorage, IndiciesStorage } from '@/Utils/Storages';
+import { CoordStorage, NodeStorage, IndiciesStorage, NeighborStorage } from '@/Utils/Storages';
 
 export default class AStar {
 
@@ -18,6 +18,7 @@ export default class AStar {
     private vectors = [[0, 1], [1, 0], [-1, 0], [0, -1]];
     private closedKeys: IndiciesStorage;
     private openKeys: IndiciesStorage;
+    private neighborStorage: NeighborStorage;
     
     constructor(game: Game) {
         this.game = game;
@@ -25,6 +26,7 @@ export default class AStar {
         this.coordStorage = new CoordStorage(this.game.field.gridCount, this.game.field.gridCount);
         this.closedKeys = new IndiciesStorage(this.game.field.gridCount, this.game.field.gridCount);
         this.openKeys = new IndiciesStorage(this.game.field.gridCount, this.game.field.gridCount);
+        this.neighborStorage = new NeighborStorage(this.game.field.gridCount, this.game.field.gridCount);
         this.maxCache = Math.floor(this.game.field.gridCount / 4);
     }
 
@@ -124,14 +126,9 @@ export default class AStar {
     }
 
     private getNeighbors(coord: PathNode): PathNode[] {
-        let res: PathNode[] = [];
-        for (const vector of this.vectors) {
-            if (coord.x + vector[0] > 0
-                && coord.y + vector[1] > 0
-                && coord.x + vector[0] < this.game.field.gridCount
-                && coord.y + vector[1] < this.game.field.gridCount
-                &&!this.checkCollision(this.nodeStorage.get(coord.x + vector[0], coord.y + vector[1]))
-            ) res.push(this.nodeStorage.get(coord.x + vector[0], coord.y + vector[1]));
+        const res: PathNode[] = [];
+        for (const neighbor of this.neighborStorage.get(coord.x, coord.y)) {
+            if (!this.checkCollision(neighbor)) res.push(neighbor);
         }
         return res;
     }
