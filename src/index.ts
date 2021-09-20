@@ -5,14 +5,14 @@ import AI from './Game/AI';
 import Heap from '@/Utils/Heap';
 
 document.addEventListener('DOMContentLoaded', () => {
-    const game = new Main('main-canvas', 320);
+    const game = new Main('main-canvas', 640);
     const ai = new AI(game);
     setInterval(() => {
         if (!game.pause) {
             ai.start();
             game.start();
         }
-    }, 1000 / 320);
+    }, 1000 / 640);
 
     document.addEventListener('keypress', (ev: KeyboardEvent) => {
         if (ev.key === 'q' || ev.key === 'й') {

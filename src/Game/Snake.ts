@@ -1,5 +1,6 @@
 import Coord from '@/Utils/Coord';
 import Direction from '@/Utils/Direction';
+import { IndiciesStorage } from '@/Utils/Storages';
 
 import Apple from './Apple';
 import Field from './Field';
@@ -12,11 +13,16 @@ export default class Snake {
     protected _direction: Direction;
     protected _body: Coord[] = [];
 
-    constructor(length: number = 8, x: number = 2, y: number = 2, direction: Direction = new Direction) {
+    private indicies: IndiciesStorage;
+    private field: Field;
+
+    constructor(field: Field, length: number = 8, x: number = 2, y: number = 2, direction: Direction = new Direction) {
         this._direction = direction;
         this._headX = x;
         this._headY = y;
         this._length = length;
+        this.field = field;
+        this.indicies = new IndiciesStorage(this.field.gridCount, this.field.gridCount);
         this.makeBody();
     }
 
@@ -28,33 +34,39 @@ export default class Snake {
                     this._headY + i * this._direction.y
                 )
             );
-        }
-    }
-
-    public draw(field: Field): void {
-        field.context.fillStyle = 'green';
-        for (const item of this._body) {
-            field.context.fillRect(
-                item.x * field.cellWidth,
-                item.y * field.cellWidth,
-                field.cellWidth,
-                field.cellHeight
+            this.indicies.add(
+                this._headX + i * this._direction.x,
+                this._headY + i * this._direction.y
             );
         }
     }
 
-    public move(field: Field, apple?: Apple, incrementOnApple: number = 20): string | null {
+    public draw(): void {
+        this.field.context.fillStyle = 'green';
+        for (const item of this._body) {
+            this.field.context.fillRect(
+                item.x * this.field.cellWidth,
+                item.y * this.field.cellWidth,
+                this.field.cellWidth,
+                this.field.cellHeight
+            );
+        }
+    }
+
+    public move(apple: Apple, incrementOnApple: number = 20): string | null {
+        this.indicies.remove(this._body[this._length - 1].x, this._body[this._length - 1].y);
         this._body.pop();
         let newX = this.body[0].x + this._direction.x;
         let newY = this.body[0].y + this._direction.y;
-        if (newX >= field.gridCount) newX = 0;
-        if (newY >= field.gridCount) newY = 0;
-        if (newX < 0) newX = field.gridCount - 1;
-        if (newY < 0) newY = field.gridCount - 1;
+        if (newX >= this.field.gridCount) newX = 0;
+        if (newY >= this.field.gridCount) newY = 0;
+        if (newX < 0) newX = this.field.gridCount - 1;
+        if (newY < 0) newY = this.field.gridCount - 1;
 
         if (this.has(newX, newY)) {
             return 'collision';
         }
+        this.indicies.add(newX, newY);
         this._body.unshift(new Coord(newX, newY));
 
         if (apple && this.checkAppleCollision(apple, newX, newY)) {
@@ -69,6 +81,10 @@ export default class Snake {
                         tail.y + i * tailYVector
                     )
                 );
+                this.indicies.add(
+                    tail.x + i * tailXVector,
+                    tail.y + i * tailYVector
+                );
             }
             return 'apple';
         }
@@ -76,10 +92,7 @@ export default class Snake {
     }
 
     public has(x: number, y: number): boolean {
-        for (const part of this._body) {
-            if (part.x === x && part.y === y) return true;
-        }
-        return false;
+        return this.indicies.has(x, y);
     }
 
     private checkAppleCollision(apple: Apple, x: number, y: number): boolean {

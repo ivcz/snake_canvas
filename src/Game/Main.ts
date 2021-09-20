@@ -16,7 +16,7 @@ export class Main {
 
     constructor(canvasId: string, gridCount: number = 10) {
         this._field = new Field(canvasId, gridCount);
-        this._snake = new Snake();
+        this._snake = new Snake(this._field);
         this._apple = new Apple(new Coord(0, 0), new Coord(1, 1));
         this.createApple();
     }
@@ -24,7 +24,7 @@ export class Main {
     public start(): void {
         // setInterval(() => {
             if (!this.isPaused) {
-                switch (this._snake.move(this._field, this._apple, this.appleScale)) {
+                switch (this._snake.move(this._apple, this.appleScale)) {
                     case 'collision':
                         console.log('score: ', this._snake.length);
                         alert('collision');
@@ -37,7 +37,7 @@ export class Main {
                     break;
                 }
                 this._field.clear();
-                this._snake.draw(this._field);
+                this._snake.draw();
                 this._apple.draw(this._field);
                 this._field.render();
             }
@@ -45,7 +45,7 @@ export class Main {
     }
 
     private restart(): void {
-        this._snake = new Snake();
+        this._snake = new Snake(this._field);
         this.createApple();
     }
 
@@ -62,10 +62,6 @@ export class Main {
                 }
             }
         }
-        // this._apple = new Apple(
-        //     new Coord(appleX1, appleY1),
-        //     new Coord(appleX1, appleY1)
-        // );
         this._apple = new Apple(
             new Coord(appleX1, appleY1),
             new Coord(appleX2, appleY2)
