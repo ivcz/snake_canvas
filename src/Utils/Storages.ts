@@ -89,3 +89,31 @@ export class IndiciesStorage {
     }
 
 }
+
+export class NeighborStorage {
+
+    private store: Array<PathNode[][]> = [];
+    private vectors = [[0, 1], [1, 0], [-1, 0], [0, -1]];
+
+    constructor(xBounds: number, yBounds: number) {
+        for (let i = 0; i < xBounds; ++i) {
+            this.store.push([]);
+            for (let j = 0; j < yBounds; ++j) {
+                const nodes = [];
+                for (const vector of this.vectors) {
+                    if (i + vector[0] > 0
+                        && i + vector[0] < xBounds
+                        && j + vector[1] > 0
+                        && j + vector[1] < yBounds
+                    ) nodes.push(new PathNode(i + vector[0], j + vector[1]));
+                }
+                this.store[i].push(nodes);
+            }
+        }
+    }
+
+    public get(x: number, y: number): PathNode[] {
+        return this.store[x][y];
+    }
+
+}
