@@ -11,19 +11,6 @@ export default class Snake {
     protected _length: number;
     protected _direction: Direction;
     protected _body: Coord[] = [];
-    protected keys: Set<string> = new Set();
-
-    public has(index: string): boolean {
-        return this.keys.has(index);
-    }
-
-    public add(index: string): void {
-        this.keys.add(index);
-    }
-
-    public delete(index: string): void {
-        this.keys.delete(index);
-    }
 
     constructor(length: number = 8, x: number = 2, y: number = 2, direction: Direction = new Direction) {
         this._direction = direction;
@@ -35,7 +22,6 @@ export default class Snake {
 
     private makeBody(): void {
         for (let i = this._length - 1; i >= 0; i--) {
-            this.add(`${this._headX + i * this._direction.x}.${this._headY + i * this._direction.y}`);
             this._body.push(
                 new Coord(
                     this._headX + i * this._direction.x,
@@ -58,7 +44,6 @@ export default class Snake {
     }
 
     public move(field: Field, apple?: Apple, incrementOnApple: number = 20): string | null {
-        this.delete(`${this._body[this._length - 1].x}.${this._body[this._length - 1].y}`);
         this._body.pop();
         let newX = this.body[0].x + this._direction.x;
         let newY = this.body[0].y + this._direction.y;
@@ -67,10 +52,9 @@ export default class Snake {
         if (newX < 0) newX = field.gridCount - 1;
         if (newY < 0) newY = field.gridCount - 1;
 
-        if (this.checkCollison(newX, newY)) {
+        if (this.has(newX, newY)) {
             return 'collision';
         }
-        this.add(`${newX}.${newY}`);
         this._body.unshift(new Coord(newX, newY));
 
         if (apple && this.checkAppleCollision(apple, newX, newY)) {
@@ -79,7 +63,6 @@ export default class Snake {
             const tailYVector = tail.y - this.body[this._length - 2].y;
             this._length += incrementOnApple;
             for (let i = 0; i < incrementOnApple; i++) {
-                this.add(`${tail.x + i * tailXVector}.${tail.y + i * tailYVector}`);
                 this._body.push(
                     new Coord(
                         tail.x + i * tailXVector,
@@ -92,8 +75,11 @@ export default class Snake {
         return null;
     }
 
-    private checkCollison(x: number, y: number): boolean {
-        return this.has(`${x}.${y}`);
+    public has(x: number, y: number): boolean {
+        for (const part of this._body) {
+            if (part.x === x && part.y === y) return true;
+        }
+        return false;
     }
 
     private checkAppleCollision(apple: Apple, x: number, y: number): boolean {

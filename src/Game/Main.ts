@@ -56,7 +56,7 @@ export class Main {
         const appleY2 = this.appleScale === 1 ? appleY1 : this.appleScale + appleY1;
         for (let i = appleX1; i <= appleX2; ++i) {
             for (let j = appleY1; j <= appleY2; ++j) {
-                if (this.snake.has(`${i}.${j}`)) {
+                if (this.snake.has(i,j)) {
                     this.createApple();
                     return;
                 }
