@@ -38,14 +38,18 @@ export default class AI {
         if (newY < 0) return true;
         if (newX >= this.game.field.gridCount) return true;
         if (newY >= this.game.field.gridCount) return true;
-        return this.game.snake.has(`${newX}.${newY}`);
+        return this.game.snake.has(newX, newY);
     }
 
     private act(): void {
         try {
             const nextCoord = this.astar.nextCoord();
-            const newVector = this.getVector(new Coord(this.game.snake.headX, this.game.snake.headY), nextCoord);
-            this.game.snake.direction.setVector(newVector);
+            if (nextCoord) {
+                this.game.snake.direction.setVector(
+                    this.getVector(new Coord(this.game.snake.headX, this.game.snake.headY), nextCoord)
+                );
+            }
+            throw 'no coord';
         } catch (err) {
             this.direction = this.game.snake.direction;
             this.look();
@@ -54,7 +58,7 @@ export default class AI {
     }
 
     public start(): void {
-        this.astar.update(this.game);
+        // this.astar.update(this.game);
         this.act();
     }
 

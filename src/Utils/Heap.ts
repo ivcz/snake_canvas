@@ -22,7 +22,7 @@ export default class Heap<T> {
         const res = this.items[0];
         this.items.pop();
         this.swap(0, this.size - 1);
-        this.sortDown(0);
+        if (this.size > 0) this.sortDown(0);
         return res;
     }
 
@@ -40,12 +40,12 @@ export default class Heap<T> {
         } else if (left < this.size) {
             min = left;
         }
-        if (this.items[i]) {
+        // if (this.items[i]) {
             if (this.compare(this.items[i], this.items[min]) === 1) {
                 this.swap(i, min);
                 this.sortDown(min);
             }
-        }
+        // }
     }
 
     protected sortUp(i: number): void {

@@ -4,76 +4,26 @@ import Field from './Field';
 import Snake from './Snake';
 
 import Coord from '@/Utils/Coord';
-import Heap from '@/Utils/Heap';
+import PathNode from '@/Utils/PathNode';
+import PathNodeHeap from '@/Utils/PathNodeHeap';
 import Direction from '@/Utils/Direction';
-
-class PathNode extends Coord {
-    public gScore: number;
-    public fScore: number;
-    public prev?: PathNode;
-
-    constructor(x: number, y: number, fScore: number = 0, gScore: number = 0, prev?: PathNode) {
-        super(x, y);
-        this.fScore = fScore;
-        this.gScore = gScore;
-        this.prev = prev;
-    }
-}
-
-class NodeHeap extends Heap<PathNode> {
-
-    protected keys: Set<string> = new Set();
-
-    constructor(items: Array<PathNode>, compare: (i1: PathNode, i2: PathNode) => number) {
-        super(items, compare);
-    }
-
-    public add(item: PathNode): void {
-        this.items.push(item);
-        this.keys.add(`${item.x}.${item.y}`);
-        this.sortUp(this.size - 1);
-    }
-
-    public has(index: string): boolean {
-        return this.keys.has(index);
-    }
-
-    public pop(): PathNode {
-        const res = this.items[0];
-        this.swap(0, this.size - 1);
-        this.items.pop();
-        this.keys.delete(`${res.x}.${res.y}`);
-        if (this.size > 0) this.sortDown(0);
-        return res;
-    }
-
-}
 
 export default class AStar {
 
     protected path: PathNode[] = [];
-    private snake: Snake;
-    private field: Field;
-    private apple: Apple;
-    private goal: Coord;
+    // private snake: Snake;
+    // private field: Field;
+    // private apple: Apple;
+    private goal: Coord = new Coord(0, 0);
     private game: Game;
+    private cacheCounter: number = 0;
+    private maxCache: number = 1000;
 
     private vectors = [[0, 1], [1, 0], [-1, 0], [0, -1]];
     
     constructor(game: Game) {
         this.game = game;
-        this.snake = this.game.snake;
-        this.field = this.game.field;
-        this.apple = this.game.apple;
-        this.goal = this.getGoalCoord();
-    }
-
-    public update(game: Game) {
-        this.game = game;
-        this.snake = this.game.snake;
-        this.field = this.game.field;
-        this.apple = this.game.apple;
-        this.goal = this.getGoalCoord();
+        this.maxCache = Math.floor(this.game.field.gridCount / 4);
     }
 
     private prevPath(): boolean {
@@ -87,18 +37,15 @@ export default class AStar {
         return false;
     }
 
-    public nextCoord(): Coord {
-        if (this.path.length > 0 && this.prevPath()) {
-            const newCoord = new Coord(this.path[0].x, this.path[0].y);
-            this.path.shift();
-            return newCoord;
+    public nextCoord(): Coord | undefined {
+        if (this.path.length > 0 && this.cacheCounter <= this.maxCache && this.prevPath()) {
+            this.cacheCounter += 1;
+            return this.path.shift()?.getCoord();
         }
         try {
-            const path = this.reconstructPath(this.findPath());
-            this.path = path;
-            const newCoord = new Coord(path[0].x, path[0].y);
-            this.path.shift();
-            return newCoord;
+            this.cacheCounter = 0;
+            this.path = this.reconstructPath(this.findPath());
+            return this.path.shift()?.getCoord();
         } catch (e) {
             console.log('err', e);
             // alert(e);
@@ -118,14 +65,14 @@ export default class AStar {
 
     private findPath(): PathNode {
         const start = new PathNode(
-            this.snake.headX,
-            this.snake.headY,
+            this.game.snake.headX,
+            this.game.snake.headY,
             this.countDistance(
-                new Coord(this.snake.headX, this.snake.headY),
+                new Coord(this.game.snake.headX, this.game.snake.headY),
                 this.getGoalCoord()
             )
         );
-        let open: NodeHeap = new NodeHeap([start], (el1: PathNode, el2: PathNode) => {
+        let open: PathNodeHeap = new PathNodeHeap([start], (el1: PathNode, el2: PathNode) => {
             if (el1.fScore < el2.fScore) return -1;
             if (el1.fScore > el2.fScore) return 1;
             if (el1.gScore < el2.gScore) return -1;
@@ -136,14 +83,14 @@ export default class AStar {
         let current = open.first;
         while (open.size > 0 && current) {
             current = open.pop();
-            if (current.x >= this.apple.x1 
-                && current.x <= this.apple.x2
-                && current.y >= this.apple.y1
-                && current.y <= this.apple.y2
+            if (current.x >= this.game.apple.x1 
+                && current.x <= this.game.apple.x2
+                && current.y >= this.game.apple.y1
+                && current.y <= this.game.apple.y2
             ) return current;
             closedKeys.add(`${current.x}.${current.y}`);
             for (let neighbor of this.getNeighbors(current)) {
-                if (!open.has(`${neighbor.x}.${neighbor.y}`) && !closedKeys.has(`${neighbor.x}.${neighbor.y}`)) {
+                if (!open.has(neighbor.x, neighbor.y) && !closedKeys.has(`${neighbor.x}.${neighbor.y}`)) {
                     const gCost = this.countDistance(start, neighbor);
                     const fCost = this.countDistance(neighbor, this.goal) + gCost;
                     neighbor.prev = current;
@@ -157,11 +104,11 @@ export default class AStar {
     }
 
     private checkCollision(coord: Coord): boolean {
-        if (coord.x >= this.field.gridCount) return true;
+        if (coord.x >= this.game.field.gridCount) return true;
         if (coord.x < 0) return true;
-        if (coord.y >= this.field.gridCount) return true;
+        if (coord.y >= this.game.field.gridCount) return true;
         if (coord.y < 0) return true;
-        return this.snake.has(`${coord.x}.${coord.y}`);
+        return this.game.snake.has(coord.x, coord.y);
     }
 
     private countDistance(c1: Coord, c2: Coord): number {
@@ -186,8 +133,8 @@ export default class AStar {
     }
 
     private getGoalCoord(): Coord {
-        const appleXCenter = Math.ceil((this.apple.x2 + this.apple.x1) / 2);
-        const appleYCenter = Math.ceil((this.apple.y2 + this.apple.y1) / 2);
+        const appleXCenter = Math.ceil((this.game.apple.x2 + this.game.apple.x1) / 2);
+        const appleYCenter = Math.ceil((this.game.apple.y2 + this.game.apple.y1) / 2);
         this.goal = new Coord(appleXCenter, appleYCenter);
         return this.goal;
     }
