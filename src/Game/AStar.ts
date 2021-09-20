@@ -1,28 +1,30 @@
 import { Main as Game } from './Main';
-import Apple from './Apple';
-import Field from './Field';
-import Snake from './Snake';
 
 import Coord from '@/Utils/Coord';
 import PathNode from '@/Utils/PathNode';
 import PathNodeHeap from '@/Utils/PathNodeHeap';
-import Direction from '@/Utils/Direction';
+import { CoordStorage, NodeStorage, IndiciesStorage } from '@/Utils/Storages';
 
 export default class AStar {
 
     protected path: PathNode[] = [];
-    // private snake: Snake;
-    // private field: Field;
-    // private apple: Apple;
+    protected nodeStorage: NodeStorage;
+    protected coordStorage: CoordStorage;
     private goal: Coord = new Coord(0, 0);
     private game: Game;
     private cacheCounter: number = 0;
     private maxCache: number = 1000;
 
     private vectors = [[0, 1], [1, 0], [-1, 0], [0, -1]];
+    private closedKeys: IndiciesStorage;
+    private openKeys: IndiciesStorage;
     
     constructor(game: Game) {
         this.game = game;
+        this.nodeStorage = new NodeStorage(this.game.field.gridCount, this.game.field.gridCount);
+        this.coordStorage = new CoordStorage(this.game.field.gridCount, this.game.field.gridCount);
+        this.closedKeys = new IndiciesStorage(this.game.field.gridCount, this.game.field.gridCount);
+        this.openKeys = new IndiciesStorage(this.game.field.gridCount, this.game.field.gridCount);
         this.maxCache = Math.floor(this.game.field.gridCount / 4);
     }
 
@@ -30,7 +32,7 @@ export default class AStar {
         const pathLength = this.path.length - 1;
         if (this.goal.x === this.path[pathLength].x && this.goal.y === this.path[pathLength].y) {
             for (let i = 0; i <= pathLength; ++i) {
-                if (this.checkCollision(new Coord(this.path[i].x, this.path[i].y))) return false;
+                if (this.checkCollision(this.coordStorage.get(this.path[i].x, this.path[i].y))) return false;
             }
             return true;
         }
@@ -41,9 +43,11 @@ export default class AStar {
         if (this.path.length > 0 && this.cacheCounter <= this.maxCache && this.prevPath()) {
             this.cacheCounter += 1;
             return this.path.shift()?.getCoord();
+        } else {
+            this.path = [];
+            this.cacheCounter = 0;
         }
         try {
-            this.cacheCounter = 0;
             this.path = this.reconstructPath(this.findPath());
             return this.path.shift()?.getCoord();
         } catch (e) {
@@ -68,7 +72,7 @@ export default class AStar {
             this.game.snake.headX,
             this.game.snake.headY,
             this.countDistance(
-                new Coord(this.game.snake.headX, this.game.snake.headY),
+                this.coordStorage.get(this.game.snake.headX, this.game.snake.headY),
                 this.getGoalCoord()
             )
         );
@@ -79,23 +83,22 @@ export default class AStar {
             if (el1.gScore > el2.gScore) return 1;
             return 0;
         });
-        let closedKeys: Set<string> = new Set();
+        this.closedKeys.clean();
+        this.openKeys.clean();
         let current = open.first;
         while (open.size > 0 && current) {
             current = open.pop();
-            if (current.x >= this.game.apple.x1 
-                && current.x <= this.game.apple.x2
-                && current.y >= this.game.apple.y1
-                && current.y <= this.game.apple.y2
-            ) return current;
-            closedKeys.add(`${current.x}.${current.y}`);
+            if (current.x === this.goal.x && current.y === this.goal.y) return current;
+            this.closedKeys.add(current.x, current.y);
+            this.openKeys.add(current.x, current.y);
             for (let neighbor of this.getNeighbors(current)) {
-                if (!open.has(neighbor.x, neighbor.y) && !closedKeys.has(`${neighbor.x}.${neighbor.y}`)) {
+                if (!this.openKeys.has(neighbor.x, neighbor.y) && !this.closedKeys.has(neighbor.x, neighbor.y)) {
                     const gCost = this.countDistance(start, neighbor);
                     const fCost = this.countDistance(neighbor, this.goal) + gCost;
                     neighbor.prev = current;
                     neighbor.gScore = gCost;
                     neighbor.fScore = fCost;
+                    this.openKeys.add(neighbor.x, neighbor.y);
                     open.add(neighbor);
                 }
             }
@@ -123,19 +126,18 @@ export default class AStar {
     private getNeighbors(coord: PathNode): PathNode[] {
         let res: PathNode[] = [];
         for (const vector of this.vectors) {
-            const newCoord = new PathNode(
-                coord.x + vector[0],
-                coord.y + vector[1]
-            );
-            if (!this.checkCollision(newCoord)) res.push(newCoord);
+            if (coord.x + vector[0] > 0
+                && coord.y + vector[1] > 0
+                && coord.x + vector[0] < this.game.field.gridCount
+                && coord.y + vector[1] < this.game.field.gridCount
+                &&!this.checkCollision(this.nodeStorage.get(coord.x + vector[0], coord.y + vector[1]))
+            ) res.push(this.nodeStorage.get(coord.x + vector[0], coord.y + vector[1]));
         }
         return res;
     }
 
     private getGoalCoord(): Coord {
-        const appleXCenter = Math.ceil((this.game.apple.x2 + this.game.apple.x1) / 2);
-        const appleYCenter = Math.ceil((this.game.apple.y2 + this.game.apple.y1) / 2);
-        this.goal = new Coord(appleXCenter, appleYCenter);
+        this.goal = this.coordStorage.get(this.game.apple.x1, this.game.apple.y1);
         return this.goal;
     }
 
