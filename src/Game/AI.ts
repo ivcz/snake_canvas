@@ -48,6 +48,7 @@ export default class AI {
                 this.game.snake.direction.setVector(
                     this.getVector(new Coord(this.game.snake.headX, this.game.snake.headY), nextCoord)
                 );
+                return;
             }
             throw 'no coord';
         } catch (err) {

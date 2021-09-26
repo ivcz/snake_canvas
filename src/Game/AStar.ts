@@ -42,8 +42,9 @@ export default class AStar {
     }
 
     public nextCoord(): Coord | undefined {
-        if (!this.goalIsReachable()) {
-            throw 'unreachable';
+        if (!this.goalIsReachable() || !this.goalHasExit()) {
+            const path = this.reconstructPath(this.findLongestPath());
+            return path[0];
         } else {
             if (this.path.length > 0 && this.cacheCounter <= this.maxCache && this.prevPath()) {
                 this.cacheCounter += 1;
@@ -73,6 +74,11 @@ export default class AStar {
         return res;
     }
 
+    private goalHasExit(): boolean {
+        this.getGoalCoord();
+        return this.getNeighbors(this.nodeStorage.get(this.goal.x, this.goal.y)).length > 1;
+    }
+
     private goalIsReachable(): boolean {
         this.getGoalCoord();
         const queue: PathNode[] = [];
@@ -96,6 +102,37 @@ export default class AStar {
             }
         }
         return false;
+    }
+
+    private findLongestPath(): PathNode {
+        const start = new PathNode(
+            this.game.snake.headX,
+            this.game.snake.headY
+        );
+        let open: PathNodeHeap = new PathNodeHeap([start], (el1: PathNode, el2: PathNode) => {
+            if (el1.gScore > el2.gScore) return -1;
+            if (el1.gScore < el2.gScore) return 1;
+            return 0;
+        });
+        // this.closedKeys.clean();
+        this.openKeys.clean();
+        let current = open.first;
+        while (open.size > 0) {
+            current = open.pop();
+            this.closedKeys.add(current.x, current.y);
+            this.openKeys.add(current.x, current.y);
+            for (let neighbor of this.getNeighbors(current)) {
+                // if (!this.openKeys.has(neighbor.x, neighbor.y) && !this.closedKeys.has(neighbor.x, neighbor.y)) {
+                if (!this.openKeys.has(neighbor.x, neighbor.y)) {
+                    const gCost = this.countDistance(start, neighbor);
+                    neighbor.prev = current;
+                    neighbor.gScore = gCost;
+                    this.openKeys.add(neighbor.x, neighbor.y);
+                    open.add(neighbor);
+                }
+            }
+        }
+        return current;
     }
 
     private findPath(): PathNode {
