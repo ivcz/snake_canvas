@@ -42,9 +42,10 @@ export default class AStar {
     }
 
     public nextCoord(): Coord | undefined {
-        if (!this.goalIsReachable() || !this.goalHasExit()) {
+        if (/*!this.goalHasExit() ||*/ !this.goalIsReachable()) {
             const path = this.reconstructPath(this.findLongestPath());
             return path[0];
+            // throw 'unreachable';
         } else {
             if (this.path.length > 0 && this.cacheCounter <= this.maxCache && this.prevPath()) {
                 this.cacheCounter += 1;
