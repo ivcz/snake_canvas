@@ -42,20 +42,24 @@ export default class AStar {
     }
 
     public nextCoord(): Coord | undefined {
-        if (this.path.length > 0 && this.cacheCounter <= this.maxCache && this.prevPath()) {
-            this.cacheCounter += 1;
-            return this.path.shift()?.getCoord();
+        if (!this.goalIsReachable()) {
+            throw 'unreachable';
         } else {
-            this.path = [];
-            this.cacheCounter = 0;
-        }
-        try {
-            this.path = this.reconstructPath(this.findPath());
-            return this.path.shift()?.getCoord();
-        } catch (e) {
-            console.log('err', e);
-            // alert(e);
-            throw e;
+            if (this.path.length > 0 && this.cacheCounter <= this.maxCache && this.prevPath()) {
+                this.cacheCounter += 1;
+                return this.path.shift()?.getCoord();
+            } else {
+                this.path = [];
+                this.cacheCounter = 0;
+            }
+            try {
+                this.path = this.reconstructPath(this.findPath());
+                return this.path.shift()?.getCoord();
+            } catch (e) {
+                console.log('err', e);
+                // alert(e);
+                throw e;
+            }
         }
     }
 
@@ -67,6 +71,31 @@ export default class AStar {
             node = node.prev;
         }
         return res;
+    }
+
+    private goalIsReachable(): boolean {
+        this.getGoalCoord();
+        const queue: PathNode[] = [];
+        this.closedKeys.clean();
+        queue.push(this.nodeStorage.get(this.goal.x, this.goal.y));
+        let current = queue[0];
+        // let counter = 0;
+        while (queue.length > 0) {
+            // if (counter > 100000) throw 'recursion';
+            // counter += 1;
+            current = queue[0];
+            queue.shift();
+            for (const neighbor of this.neighborStorage.get(current.x, current.y)) {
+                if (neighbor.x === this.game.snake.headX && neighbor.y === this.game.snake.headY) return true;
+                if (!this.closedKeys.has(neighbor.x, neighbor.y)
+                    && !this.checkCollision(this.coordStorage.get(neighbor.x, neighbor.y))
+                ) {
+                    this.closedKeys.add(neighbor.x, neighbor.y);
+                    queue.push(neighbor);
+                }
+            }
+        }
+        return false;
     }
 
     private findPath(): PathNode {
