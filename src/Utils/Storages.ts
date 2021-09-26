@@ -101,9 +101,9 @@ export class NeighborStorage {
             for (let j = 0; j < yBounds; ++j) {
                 const nodes = [];
                 for (const vector of this.vectors) {
-                    if (i + vector[0] > 0
+                    if (i + vector[0] >= 0
                         && i + vector[0] < xBounds
-                        && j + vector[1] > 0
+                        && j + vector[1] >= 0
                         && j + vector[1] < yBounds
                     ) nodes.push(new PathNode(i + vector[0], j + vector[1]));
                 }
